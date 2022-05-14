@@ -1,17 +1,14 @@
-#include <Arduino.h>
 #include <PubSubClient.h>
 #include <WiFi.h>
 
-const char* ssid    = "UbeeF7F8";
-const char* password= "6FC964F7F8";
+const char* ssid    = "HUAWEI-ARUYHA";
+const char* password= "93KFQVAF9W";
 
 const char* mqtt_server = "driver.cloudmqtt.com";
-const int mqtt_port = 18609;
-//const int mqtt_port = 38625;
-const char* mqtt_user = "kuoikysd";
-//const char* mqtt_user = "bmtqnhmu";
-const char* mqtt_pass = "nSft8JXHmveG";
-//const char* mqtt_pass = "KHw4Itds6hTj";
+const int mqtt_port = 18594;
+const char* mqtt_user = "zrbouvpv";
+const char* mqtt_pass = "-_z_R0C9DGkT";
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -37,7 +34,7 @@ void powerColumnas2(int p1, int p2, int p3, int p4, int p5, int p6, int p7, int 
   }
 }
 
-void powerPisos(int x) { //En esta función se establecen los valores para las pisos
+void powerPisos(int x) { //En esta funciĂłn se establecen los valores para las pisos
   switch (x) {
     case 0: {
         int valN[] = {0, 1, 1, 1};
@@ -85,7 +82,7 @@ void powerPisos(int x) { //En esta función se establecen los valores para las p
 }
 
 void patron_rededor() {
-  int t = 100; //Tiempo de espera para realizar la siguiente acción
+  int t = 100; //Tiempo de espera para realizar la siguiente acciĂłn
   for (int i = 0; i < pisos; i++)
   {
     powerPisos(i);
@@ -225,7 +222,10 @@ void patron_random(){
 
 
 void callback(char* topic, byte* payload, unsigned int length) {
-
+  Serial.print("Mensaje recibido bajo el tópico ->");
+  Serial.print(topic);
+  Serial.print("\n");
+  
   switch ((char)payload[0])
   {
     case '1':
@@ -277,30 +277,43 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 
 void reconnect(){
-  while (!client.connected())
-  {
+  
+  while (!client.connected()) {
+    Serial.println("Intentando Conexión MQTT");
+
     String clientId = "iot_1_";
     clientId = clientId + String(random(0xffff), HEX);
 
-    if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass))
-    {
-      client.publish("salida_N", "primer mensaje");
-      //client.subscribe("entrada_N");
-      client.subscribe("entrada_proyecto");
-    }
-    else{
+    if (client.connect(clientId.c_str(), mqtt_user, mqtt_pass)) {
+      Serial.println("Conexión a MQTT exitosa");
+      client.publish("salida","primer mensaje");
+      client.subscribe("entrada");  
+    }else{
+      Serial.println("Falló la conexión");
+      Serial.print(client.state());
+      Serial.print("Se intentará de nuevo en 5 segundos");
       delay(5000);
     }
   }
-}
+} 
 
 void setup_wifi(){
-  //conectando a la red WiFi
-  WiFi.begin(ssid, password);
+  Serial.println();
+  Serial.println("Conectando a...");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid,password);
 
   while (WiFi.status() != WL_CONNECTED){
-    delay(250);
+    delay(500);
+    Serial.print(".");
   }
+
+  Serial.println("");
+  Serial.println("Conectado a la red");
+  Serial.println("Dirección IP: ");
+  Serial.println(WiFi.localIP());
+  
 }
 
 void setup() {
@@ -315,23 +328,26 @@ void setup() {
   //establecemos en nuestro cliente las credenciales del servidor MQTT
   client.setServer(mqtt_server, mqtt_port);
 
-  //funcion que se llama cada que el servidor envíe un mensaje
+  //funcion que se llama cada que el servidor envĂ­e un mensaje
   client.setCallback(callback);
 }
 
 
 void loop() {
-  if (client.connected()==false)
-  {
+  // put your main code here, to run repeatedly:
+  if(client.connected()==false){
     reconnect();
   }
+
   client.loop();
 
-  if(millis() - lastMsg > 2000){
+  if (millis() - lastMsg > 2000){
     lastMsg = millis();
     value++;
-    String mes = "Valor -> " + String(value);
-    mes.toCharArray(msg, 50);
-    client.publish("salida_N", msg);
+    String mes = "Valor -> " +  String(value);
+    mes.toCharArray(msg,50);
+    client.publish("salida", msg);
+    Serial.println("Mensaje enviado ->" + String(value));
   }
+  
 }
